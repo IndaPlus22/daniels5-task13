@@ -21,6 +21,7 @@ use crate::hittable::*;
 use crate::sphere::*;
 use crate::hittable_list::*;
 use rand::Rng;
+use indicatif::*;
 
 
 
@@ -119,8 +120,10 @@ fn main() -> std::io::Result<()> {
     write!(file, "255\n")?;
     let mut j = height - 1;
     let mut rng = rand::thread_rng();
+    let bar = ProgressBar::new((j*width) as u64);
+    bar.set_style(ProgressStyle::default_bar().template("[{elapsed} elapsed] {wide_bar:.cyan/white} {percent}% [{eta} remaining] [rendering]").ok().unwrap());
     while j >= 0 {
-        println!("Scan lines left: {}",j);
+        //println!("Scan lines left: {}",j);
         for i in 0..width {
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
             for s in 0..samples_per_pixel {
@@ -130,6 +133,7 @@ fn main() -> std::io::Result<()> {
                 let r = camera.get_ray(u, v);
                 pixel_color += ray_color(&r, &world, max_depth);
             }
+            bar.inc(1);
             write_color(&file, pixel_color, samples_per_pixel)
         }
         j = j-1;
