@@ -1,5 +1,10 @@
+use rand::Rng;
 pub mod vector {
-    use std::{ops};
+    use std::{ops, cmp};
+
+    use rand::Rng;
+
+    use crate::random::random_double;
 
     #[derive(Copy, Clone)]
     pub struct Vec3{
@@ -30,6 +35,41 @@ pub mod vector {
         pub fn unit_vector(v1: Vec3) -> Vec3{
             return v1 / v1.length();
         }
+        pub fn random(min: f64, max: f64) -> Vec3 {
+            return Vec3::new(random_double(min, max), random_double(min, max), random_double(min, max))
+        }
+
+        pub fn random_in_unit_sphere() -> Vec3{
+            while true {
+                let p = Vec3::random(-1.0, 1.0);
+                if (p.squared_length() < 1.0) {
+                    return p;
+                }
+            }
+            return Vec3::new(0.0, 0.0, 0.0);
+        }
+        pub fn random_unit_vector() -> Vec3 {
+            return Vec3::unit_vector(Vec3::random_in_unit_sphere())
+        }
+        pub fn near_zero(&self) -> bool {
+            let s = 1e-8;
+            return (self.x.abs() < s && self.y.abs() < s && self.z.abs() < s);
+        }
+        pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f64) -> Vec3 {
+            let cos_theta = f64::min(Vec3::dot(-1.0*uv, n), 1.0);
+            let r_out_perp = etai_over_etat * (uv + cos_theta*n);
+            let r_out_parallel = -1.0*((1.0 - r_out_perp.squared_length()).abs()).sqrt() * n;
+            return r_out_perp + r_out_parallel;
+        }
+        pub fn random_in_unit_disk() -> Vec3 {
+            while true {
+                let p = Vec3::new(random_double(-1.0, 1.0), random_double(-1.0, 1.0), 0.0);
+                if (p.squared_length() < 1.0) {
+                    return p;
+                }
+            }
+            return Vec3::new(100.0, 1000.0,1000.0);
+        }
 
     }
     impl ops::Add<Vec3> for Vec3 {
@@ -51,6 +91,12 @@ pub mod vector {
 
         fn mul(self, _rhs: Vec3) -> Self::Output {
             Vec3::new(self.x*_rhs.x, self.y*_rhs.y, self.z*_rhs.z)
+        }
+    }
+    impl ops::Mul<Vec3> for f64 {
+        type Output = Vec3;
+        fn mul(self, rhs: Vec3) -> Self::Output {
+            Vec3::new(rhs.x*self, rhs.y*self, rhs.z*self)
         }
     }
     impl ops::Div<Vec3> for Vec3 {
