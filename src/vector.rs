@@ -1,6 +1,6 @@
 use rand::Rng;
 pub mod vector {
-    use std::{ops, cmp};
+    use std::{ops, cmp, iter::Sum};
 
     use rand::Rng;
 
@@ -11,14 +11,11 @@ pub mod vector {
         pub x: f64,
         pub y: f64,
         pub z: f64,
-        pub r: f64,
-        pub g: f64,
-        pub b: f64
     }
 
     impl Vec3 {
         pub fn new(x: f64, y: f64, z: f64) -> Vec3{
-            Vec3 { x: (x), y: (y), z: (z) , r: x, g: y, b: z}
+            Vec3 { x: (x), y: (y), z: (z)}
         }
         pub fn length(&self) -> f64 {
             return f64::sqrt(self.x*self.x + self.y*self.y + self.z*self.z);
@@ -69,6 +66,15 @@ pub mod vector {
                 }
             }
             return Vec3::new(100.0, 1000.0,1000.0);
+        }
+        pub fn getByNumber(&self, index: i32) -> f64 {
+            if(index == 0) {
+                return self.x;
+            } else if (index == 1) {
+                return self.y;
+            } else {
+                return self.z;
+            }
         }
 
     }
@@ -158,5 +164,17 @@ pub mod vector {
             self.y /= rhs;
             self.z /= rhs;
         }
+    }
+    impl Sum<Self> for Vec3 {
+        fn sum<I>(iter: I) -> Self
+        where
+            I: Iterator<Item = Self>,
+            {
+                iter.fold(Self {x: 0.0, y: 0.0, z: 0.0}, |a, b| Self {
+                    x: a.x + b.x,
+                    y: a.y + b.y,
+                    z: a.z + b.z
+                })
+            }
     }
 }

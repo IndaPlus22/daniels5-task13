@@ -1,14 +1,15 @@
-use crate::{hittable::HitRecord, ray::ray::Ray, vector::vector::Vec3, random::random_double};
+use crate::{hittable::HitRecord, ray::ray::Ray, vector::vector::Vec3, random::random_double, texture::{self, Texture}};
 #[derive(Clone, Copy)]
 pub enum Material {
-    Lambertian {albedo: Vec3},
+    Lambertian {albedo: Texture},
     Metal {albedo: Vec3, fuzz: f64},
-    Dielectric {ir: f64}
+    Dielectric {ir: f64},
+    DiffuseLight {emit: Texture}
 }
 
 impl Default for Material {
     fn default() -> Self {
-        Material::Lambertian { albedo: Vec3::new(0.0, 0.0, 0.0) }
+        Material::Lambertian { albedo: Texture::SolidColor { ColorValue: (Vec3::new(0.0, 0.0, 0.0)) }  }
     }
 }
 
@@ -20,13 +21,13 @@ pub fn scatter(material: &Material, r_in: &Ray, rec: &HitRecord, attenuation: &m
             if(scatter_direction.near_zero()) {
                 scatter_direction = rec.normal;
             }
-            *scattered = Ray::new(rec.p, scatter_direction);
-            *attenuation = albedo;
+            *scattered = Ray::new(rec.p, scatter_direction, r_in.time());
+            *attenuation = albedo.value(rec.u, rec.v, rec.p);
             return true;
         }
         &Material::Metal { albedo, fuzz } => {
             let reflected = reflect(&Vec3::unit_vector(r_in.direction()), &rec.normal);
-            *scattered = Ray::new(rec.p, reflected + fuzz*Vec3::random_in_unit_sphere());
+            *scattered = Ray::new(rec.p, reflected + fuzz*Vec3::random_in_unit_sphere(), r_in.time());
             *attenuation = albedo;
             return (Vec3::dot(scattered.direction(), rec.normal) > 0.0);
         }
@@ -49,11 +50,28 @@ pub fn scatter(material: &Material, r_in: &Ray, rec: &HitRecord, attenuation: &m
             } else {
                 direction = Vec3::refract(unit_direction, rec.normal, refraction_ratio);
             }
-            *scattered = Ray::new(rec.p, direction);
+            *scattered = Ray::new(rec.p, direction, r_in.time());
             return true;
+        }
+        &Material::DiffuseLight { emit } => {
+            
+            return false;
         }
     }
 }
+
+
+pub fn emitted(material: &Material,u: f64, v: f64, p: Vec3) -> Vec3{
+    match material {
+        &Material::DiffuseLight { emit } => {
+            return emit.value(u, v, p)
+        }
+        _ => {
+            return Vec3::new(0.0, 0.0, 0.0);
+        }
+    }
+}
+
 
 pub fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
     let mut r0 = (1.0-ref_idx) / (1.0+ref_idx);
@@ -64,5 +82,7 @@ pub fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
 pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
     return *v - 2.0*Vec3::dot(*v, *n)*(*n);
 }
+
+
 
 
