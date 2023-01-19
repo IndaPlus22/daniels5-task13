@@ -2,6 +2,7 @@
 
 ## This has been a journey...
 I know that this code is not idomatic at all, but hey i learnt alot.
+I somehow achieved multithreading by using rayon.
 
 ## How to run:
 Too crank up the heat in you're room by turning the computer into a radiator simply do the following:
